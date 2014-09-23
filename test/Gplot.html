@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="../css/c3.css">
+  </head>
+  <body>
+    <div id="chart" style="margin-left:auto; margin-right:auto; width:80%; height:600px;"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="../js/c3.js"></script>
+    <script src="../js/jstat.js"></script>
+    <script src="../js/R.js"></script>
+    <script src="../js/G.js"></script>
+    <script>
+	var Ax = R.rnorm(100, 10, 2);
+	var Ay = R.rnorm(100, 10, 2);
+	var Bx = R.rnorm(100, 0, 1);
+	var By = R.rnorm(100, 0, 1);
+    var g  = new G();
+	g.plot("A", Ax, Ay);
+	g.plot("B", Bx, By);
+	g.show();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,152 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="../css/c3.css">
+	<style>
+	body, fieldset, div { font-size:16px; }
+	button { font-size:28px; }
+	div { float:left; width:90%; height:90%; border:#dddddd 0px dotted;}
+	textarea { width:95%; border:#336699 1px dotted; font-size:16px; }
+	fieldset { width:90%; height:98%; }
+	</style>
+  </head>
+  <body>
+   <div style="width:95%; height:500px;">
+    <div style="width:45%;height:95%">
+     <fieldset>
+      <legend>JavaScript</legend>
+	  <center>
+	  <textarea id="code" style="height:60%" onkeyup="codekeyup(event)">
+x = rnorm(1000, 5, 2);
+hist(x, "normalized", "x");
+curve("dnorm(x, 5,2)", "N(5,2)");
+</textarea><br/>
+	  <input type="radio" name="mode" value="code" checked="true"/>code
+      <input type="radio" name="mode" value="console"/>console
+      <textarea id="msgbox" style="height:30%"></textarea><br/>
+	  </center>
+    </div>
+    <div style="width:8%;">
+    <button onclick="run()">run</button>
+    </div>
+    <div style="width:45%;height:95%">
+     <fieldset>
+      <legend>Graph</legend>
+      <div id="chart" style="height:95%"></div>
+     </fieldset>
+	</div>
+   </div>
+   <div style="width:95%;height:300px">
+   </div>
+    
+   <script src="../js/d3.min.js" charset="utf-8"></script>
+   <script src="../js/c3.min.js"></script>
+   <script src="../js/jstat.min.js"></script>
+   <script src="../js/numeric.min.js"></script>
+   <script src="../js/R.js"></script>
+   <script>
+	function codekeyup(event) {
+      if (event.keyCode == 13) {
+	    var codebox = document.getElementById("code");
+		var lines = codebox.value.trim().split("\n");
+		var lastLine  = lines.pop().trim();
+		if (lastLine.substring(0,2) !== "//") {
+		  var result = eval(lastLine);
+		  C.log("lastLine="+lastLine+" result="+result);
+		  if (lastLine.indexOf("=")<0 && typeof(result)!=="undefined")
+ 	        codebox.value = codebox.value+"// "+result+"\n";
+		}
+		codebox.scrollTop = codebox.scrollHeight;
+	  } else {
+        return true;
+      }
+	}
+
+    function run() {
+      var code = document.getElementById("code").value.replace(/\$/g, "");
+      eval(code);
+    }
+
+	run();
+   </script>
+ </body>
+</html>
+
+<!--
+
+var Ax = R.rnorm(100, 10, 2);
+var Ay = R.rnorm(100, 10, 2);
+var Bx = R.rnorm(100, 0, 1);
+var By = R.rnorm(100, 0, 1);
+var g  = new G();
+g.plot("A", Ax, Ay);
+g.plot("B", Bx, By);
+g.show();
+
+/*
+var g  = new G();
+g.curve("normal", -5, 15, 1, fnorm);
+g.curve("uniform",-5, 15, 1, funif);
+R.log("%j", g.g);
+g.show();
+*/
+
+	var g  = new G();
+	var funif = function(x) { return dunif(x, 2, 6); }
+	var fnorm = function(x) { return dnorm(x, 10, 2); }
+    g.curve("normal", -5, 15, 0.1, fnorm);
+    g.curve("uniform",-5, 15, 0.1, funif);
+    C.log(""+g.g);
+	var Ax = rnorm(100, 10, 1);
+	C.log("Ax="+Ax);
+	var Ay = rnorm(100, 0, 0.5);
+	var Bx = rnorm(100, 0, 1);
+	var By = rnorm(100, 0, 0.5);
+	g.plot("A", Ax, Ay);
+	g.plot("B", Bx, By);
+	var Cx = rnorm(1000, 10, 2);
+	g.hist("norm(10,2)", 5, 15, 0.8, Cx, "normalized");
+	C.log(g);
+	g.show();
+
+//	var C = console;
+	C.log("R.dnorm(9, 10, 2)="+dnorm(9, 10, 2));
+	
+	var g  = new G();
+
+    g.curve("T3", -5, 5, 0.1, function(x) { return dt(x, 3); });
+    g.curve("T10", -5, 5, 0.1, function(x) { return dt(x, 10); });
+    g.curve("T25", -5, 5, 0.1, function(x) { return dt(x, 25); });
+	
+//    g.curve("normal", 5, 15, 0.1, function(x) { return dnorm(x, 10, 2); });
+/*
+	var funif = function(x) { return dunif(x, 2, 6); }
+	var fnorm = function(x) { return dnorm(x, 10, 2); }
+    g.curve("normal", -5, 15, 0.1, fnorm);
+    g.curve("uniform",-5, 15, 0.1, funif);
+    C.log(""+g.g);
+	var Ax = rnorm(100, 10, 1);
+	C.log("Ax="+Ax);
+	var Ay = rnorm(100, 0, 0.5);
+	var Bx = rnorm(100, 0, 1);
+	var By = rnorm(100, 0, 0.5);
+	g.plot("A", Ax, Ay);
+	g.plot("B", Bx, By);
+*/	
+	
+	var Cx = rnorm(1000, 10, 2);
+//	g.hist("norm(10,2)", 5, 15, 0.8, Cx);
+	
+	C.log(JSON.stringify(g.g));
+	g.show();
+
+/*	var g  = new G();
+	var fnorm = function(x) { return R.dnorm(x, 10, 2); }
+	var x = R.rnorm(1000, 10, 2);
+//	g.hist("norm(10,2)", 5, 15, 0.8, x);
+    g.curve("norm(10,2)", 5, 15, 0.1, fnorm);
+	C.log(JSON.stringify(g.g));	
+	g.show();
+*/	
+	
+-->
+ 
