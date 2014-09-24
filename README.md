@@ -1,3 +1,54 @@
+jslab
+=====
+
+JsLab -- A JavaScript Scientific Computing Environment (in R style API)
+
+JsLab is a R like environment but in JavaScript Language.
+
+We create JsLab by integrate the following open source project.
+
+* numeric.js -- http://numericjs.com/ (BSD like license)
+* jStat.js -- https://github.com/jstat/jstat (MIT license)
+* d3.js -- http://d3js.org/ (BSD license)
+* c3.js -- http://c3js.org/ (MIT license)
+
+The R.js should be included to write the R style code in Javascript.
+
+You may run the R.js in node.js console mode or in browser. 
+
+The function of jslab is attach to the global object (in browser, the window object) so that you don't have to call api in the R.norm(x, 5, 2) style. You may just use norm(x, 5, 2) directly.
+
+### Example 1 : run in node.js
+
+file: rtest1.js
+
+```javascript
+var R = require("../js/R");
+
+var x = rnorm(25, 5, 2);
+C.log("x=%s\nmean(x)=%d sd(x)=%d", toStr(x,2), mean(x), sd(x,1));
+
+var t = ttest(5.2, x, 2);
+C.log("t=%j", t);
+```
+
+run the code in node.js
+
+```
+D:\Dropbox\Public\jslab\test>node rtest1
+x=[5.11,5.58,6.55,8.60,5.74,5.76,6.25,4.49,2.49,5.64,3.27,5.11,5.27,5.48,4.13,3.
+44,4.51,2.95,6.80,5.95,6.06,8.40,4.24,4.74,3.03]
+mean(x)=5.1825993345749195 sd(x)=1.5376908648028214
+t=0.9553477856606291
+```
+
+### Example 2 : run in browser.js
+
+![](../img/jslab_test.jpg)
+
+file : jslab.html
+
+```html
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="../css/c3.css">
@@ -67,83 +118,7 @@ curve("dnorm(x, 5,2)", "N(5,2)");
    </script>
  </body>
 </html>
+```
 
-<!--
 
-var Ax = R.rnorm(100, 10, 2);
-var Ay = R.rnorm(100, 10, 2);
-var Bx = R.rnorm(100, 0, 1);
-var By = R.rnorm(100, 0, 1);
-var g  = new G();
-g.plot("A", Ax, Ay);
-g.plot("B", Bx, By);
-g.show();
 
-/*
-var g  = new G();
-g.curve("normal", -5, 15, 1, fnorm);
-g.curve("uniform",-5, 15, 1, funif);
-R.log("%j", g.g);
-g.show();
-*/
-
-	var g  = new G();
-	var funif = function(x) { return dunif(x, 2, 6); }
-	var fnorm = function(x) { return dnorm(x, 10, 2); }
-    g.curve("normal", -5, 15, 0.1, fnorm);
-    g.curve("uniform",-5, 15, 0.1, funif);
-    C.log(""+g.g);
-	var Ax = rnorm(100, 10, 1);
-	C.log("Ax="+Ax);
-	var Ay = rnorm(100, 0, 0.5);
-	var Bx = rnorm(100, 0, 1);
-	var By = rnorm(100, 0, 0.5);
-	g.plot("A", Ax, Ay);
-	g.plot("B", Bx, By);
-	var Cx = rnorm(1000, 10, 2);
-	g.hist("norm(10,2)", 5, 15, 0.8, Cx, "normalized");
-	C.log(g);
-	g.show();
-
-//	var C = console;
-	C.log("R.dnorm(9, 10, 2)="+dnorm(9, 10, 2));
-	
-	var g  = new G();
-
-    g.curve("T3", -5, 5, 0.1, function(x) { return dt(x, 3); });
-    g.curve("T10", -5, 5, 0.1, function(x) { return dt(x, 10); });
-    g.curve("T25", -5, 5, 0.1, function(x) { return dt(x, 25); });
-	
-//    g.curve("normal", 5, 15, 0.1, function(x) { return dnorm(x, 10, 2); });
-/*
-	var funif = function(x) { return dunif(x, 2, 6); }
-	var fnorm = function(x) { return dnorm(x, 10, 2); }
-    g.curve("normal", -5, 15, 0.1, fnorm);
-    g.curve("uniform",-5, 15, 0.1, funif);
-    C.log(""+g.g);
-	var Ax = rnorm(100, 10, 1);
-	C.log("Ax="+Ax);
-	var Ay = rnorm(100, 0, 0.5);
-	var Bx = rnorm(100, 0, 1);
-	var By = rnorm(100, 0, 0.5);
-	g.plot("A", Ax, Ay);
-	g.plot("B", Bx, By);
-*/	
-	
-	var Cx = rnorm(1000, 10, 2);
-//	g.hist("norm(10,2)", 5, 15, 0.8, Cx);
-	
-	C.log(JSON.stringify(g.g));
-	g.show();
-
-/*	var g  = new G();
-	var fnorm = function(x) { return R.dnorm(x, 10, 2); }
-	var x = R.rnorm(1000, 10, 2);
-//	g.hist("norm(10,2)", 5, 15, 0.8, x);
-    g.curve("norm(10,2)", 5, 15, 0.1, fnorm);
-	C.log(JSON.stringify(g.g));	
-	g.show();
-*/	
-	
--->
- 

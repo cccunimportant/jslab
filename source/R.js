@@ -129,6 +129,8 @@ V.toStr=function(a, precision) {
   return "["+rzStr.trim().replace(/ /gi, ",")+"]";
 }
 
+V.toStr=function(o) { return o.toString(); }
+
 // apply(a, f)=>[f(a[0]), ..., f(a[n],p)]
 V.apply=function() {
   var args = Array.prototype.slice.call(arguments);
