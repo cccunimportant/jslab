@@ -44,7 +44,7 @@ t=0.9553477856606291
 
 ### Example 2 : run in browser.js
 
-![](../img/jslab_test.jpg)
+![](img/jslab_test.jpg)
 
 file : jslab.html
 
