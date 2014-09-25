@@ -11,6 +11,8 @@ We create JsLab by integrate the following open source project.
 * jStat.js -- https://github.com/jstat/jstat (MIT license)
 * d3.js -- http://d3js.org/ (BSD license)
 * c3.js -- http://c3js.org/ (MIT license)
+* jQuery -- http://jquery.com/
+* jquery-linedtextarea -- http://alan.blog-city.com/jquerylinedtextarea.htm
 
 The R.js should be included to write the R style code in Javascript.
 
@@ -52,70 +54,131 @@ file : jslab.html
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="../css/c3.css">
+	<link rel="stylesheet" type="text/css" href="../css/jquery-linedtextarea.css"/>
 	<style>
 	body, fieldset, div { font-size:large; }
-	button { font-size:large; }
-	div { float:left; width:90%; height:90%; border:#dddddd 0px dotted;}
-	textarea { width:95%; border:#336699 1px dotted; font-size:16px; }
+	button , input { font-size:large; }
+	textarea { width:95%; }
 	fieldset { width:90%; height:98%; }
 	</style>
   </head>
   <body>
-   <div style="width:100%; height:500px;">
-    <div style="width:50%;height:95%">
+   <div style="width:100%; height:400px;">
+    <div style="width:50%;height:95%;float:left;">
      <fieldset>
       <legend>JavaScript</legend>
 	  <center>
-	  <textarea id="code" style="height:90%" onkeyup="codekeyup(event)">
+	  <textarea id="codebox" class="lined" style="height:80%" onkeyup="onLineNumber();" onmouseup="this.onkeyup();">
 x = rnorm(1000, 5, 2);
+toStr(x,2);
 hist(x, "normalized", "x");
 curve("dnorm(x, 5,2)", "N(5,2)");
-</textarea><br/>
-	  <input type="radio" name="mode" value="code" checked="true"/>code
-      <input type="radio" name="mode" value="console"/>console &nbsp;&nbsp;&nbsp;
-      <button onclick="run()">run</button>
+</textarea>
+      <div style="height:10px"></div>
+      <div>
+	    <input type="file" id="filebox" name="filebox" onchange="handleFileSelect"/>
+	    <input type="radio" name="mode" value="code" checked="true"/>code
+        <input type="radio" name="mode" value="line"/>line &nbsp;
+        <button onclick="run()">run</button>
+	  </div>
 	  </center>
     </div>
-    <div style="width:50%;height:95%">
+    <div style="width:50%;height:95%;float:left;">
      <fieldset>
       <legend>Graph</legend>
       <div id="chart" style="height:95%"></div>
      </fieldset>
 	</div>
    </div>
-   <div style="width:95%;height:300px">
+   <div style="width:98%;height:100px">
+     <textarea id="msgbox" style="width:100%;height:100%"></textarea>
    </div>
     
    <script src="../js/d3.min.js" charset="utf-8"></script>
    <script src="../js/c3.min.js"></script>
    <script src="../js/jstat.min.js"></script>
    <script src="../js/numeric.min.js"></script>
-   <script src="../js/R.js"></script>
+   <script src="../js/jquery.min.js"></script>
+   <script src="../js/jquery-linedtextarea.js"></script>
+   <script src="../source/R.js"></script>
    <script>
-	function codekeyup(event) {
-      if (event.keyCode == 13) {
-	    var codebox = document.getElementById("code");
-		var lines = codebox.value.trim().split("\n");
-		var lastLine  = lines.pop().trim();
-		if (lastLine.substring(0,2) !== "//") {
-		  var result = eval(lastLine);
-		  C.log("lastLine="+lastLine+" result="+result);
-		  if (lastLine.indexOf("=")<0 && typeof(result)!=="undefined")
- 	        codebox.value = codebox.value+"// "+result+"\n";
-		}
-		codebox.scrollTop = codebox.scrollHeight;
-	  } else {
-        return true;
-      }
+   var filebox = document.getElementById('filebox');
+   var codebox = document.getElementById('codebox');
+   var msgbox  = document.getElementById('msgbox');
+   var lineNo  = 1;
+   var mode, code, lines, results;
+   
+   function msgClear() { msgbox.value = ""; }
+   
+   function getRadioValue(name) {
+     return document.querySelector('input[name='+name+']:checked').value;
+   }
+
+   function handleFileSelect(evt) {
+	  msgClear();
+	  var reader = new FileReader();
+	  reader.onload = function(e) {
+		codebox.value = reader.result;
+	    run();
+      };
+      reader.readAsText(evt.target.files[0]);
 	}
+	
+	filebox.addEventListener('change', handleFileSelect, false);
 
-    function run() {
-      var code = document.getElementById("code").value.replace(/\$/g, "");
-      eval(code);
+    function onLineNumber() {
+     if (mode === "line") {
+      lineNo = codebox.value.substr(0, codebox.selectionStart).split("\n").length;
+      var msg = "";
+	  if (lineNo < results.length) {
+	    var r = results[lineNo];
+		msg += "line "+lineNo+" : "+lines[lineNo];
+		if (r.error !== null)
+		  msg += "\nerror  : "+r.error;
+	    msg += "\nreturn : "+r.value;
+	  }
+	  msgbox.value = msg;
+	 }
     }
-
+	
+    function run() {
+      code = codebox.value.trim();
+	  mode = getRadioValue("mode");
+      msgbox.value = "running...";
+	  if (mode === "code") {
+        try { 
+          eval("newGraph();"+code);
+		} catch (e) {
+		  msgbox.value = "error  : ";
+		  if (typeof(e.lineNumber) !== "undefined")
+		    msgbox.value += "line="+e.lineNumber+" column="+e.columnNumber;
+		  msgbox.value += "\nmessage : "+e.message;
+		}
+	  } else {
+        lines = ["newGraph()"].concat(code.split("\n"));
+	    results = [];
+	    for (var i in lines) {
+	      var v = null, e=null;
+	      try { 
+		    v=eval(lines[i]); 
+		  } catch (error) {
+		    e=error;
+		  }
+	      results.push({value:v,error:e});
+	    }
+	  }
+	  msgbox.value += "finished!";
+    }
+	
 	run();
    </script>
+   <script>
+    $(function() {
+	  $(".lined").linedtextarea(
+		{selectedLine: -1}
+	  );
+    });
+   </script>	
  </body>
 </html>
 ```
