@@ -5,39 +5,31 @@ R = {};
 
 if (typeof(module)!=="undefined") {
   jStat = require("../js/jstat");
+  M = require("../js/numeric");
   R = global;
   V = global;
   R.inBrowser = false;
-  R.M = require("../js/numeric");
   module.exports = R;
 } else {
   R = window;
   V = window;
-  R.M = numeric;
+  M = numeric;
   R.inBrowser = true;
 }
 
 C = console;
 R.C = console;
 
-R.def=function(arg, value) {
+R.M = M
+R.str=M.prettyPrint;
+M.precision = 2;
+M.largeArray = 100;
+
+V.def=function(arg, value) {
    return (typeof arg == 'undefined' ? value : arg);
 }
 
 // ------------------------ 陣列數值函數 ------------------------------
-V.precision = 2;
-
-V.toStr=function(a, precision) {
-  var rzStr = "";
-  for (var i=0; i<a.length; i++) {
-    if (a[i]>=0)
-      rzStr+=a[i].toFixed(precision)+" ";
-    else
-      rzStr+=a[i].toFixed(precision)+" ";
-  }
-  return "["+rzStr.trim().replace(/ /gi, ",")+"]";
-}
-
 // max(a0..an)
 V.max=function(a) {
   var r=Number.MIN_VALUE;
@@ -80,11 +72,14 @@ V.prod=function(a) {
 
 // list(from, from+step, ..., to)
 V.steps=function(from, to, step) {
+  step = V.def(step, 1);
   var a=[];
   for (var i=0; from+i*step<=to; i++)
     a.push(from+i*step);
   return a;
 }
+
+V.s = V.steps;
 
 // [ o, o, ...., o ]
 V.repeats=function(o, n) {
@@ -129,6 +124,11 @@ V.flat=function(a) {
     for (var j in a[i])
       V.push(a[i][j]);
   return r;
+}
+
+V.normalize = function(a) {
+  var total = V.sum(a);
+  return V.apply(a, function(x) { return x/total; });
 }
 
 // apply(a, f)=>[f(a[0]), ..., f(a[n],p)]
@@ -208,6 +208,21 @@ R.pt=function(q, dof) { return jStat.studentt.cdf(q, dof); }
 // 
 
 // -------------------------- 離散分布 -------------------------------------
+R.sample1=function(a, p) { 
+  var r = Math.random();
+  var u = V.repeats(1.0, a.length);
+  p = V.def(p, V.normalize(u));
+  var psum = 0;
+  for (var i in p) {
+    psum += p[i];
+	if (psum > r)
+	  return a[i];
+  }
+  return null;
+}
+
+R.sample=function(n, a, p) { return V.calls(n, R.sample1, a, p); }
+
 // 二項分布
 R.rbinom=function(n, N, p) { return V.calls(n, jStat.binomial.sample, N, p); }
 // 負二項分布
@@ -241,13 +256,13 @@ R.rkumaraswamy=function(n, alpha, beta) { return V.calls(n, jStat.kumaraswamy.sa
 // 說明：以下 ?test 傳回顯著值 p-value，最後一個變數 flag = true 代表使用樣本標準差。
 // 參考：http://stattrek.com/probability-distributions/t-distribution.aspx
 R.ztest = function(mu, x, sides, flag) { 
-  sides = R.def(sides, 2), flag = R.def(flag, true);
+  sides = V.def(sides, 2), flag = V.def(flag, true);
   return jStat.ztest(mu, x, sides, true); 
 }
 
 R.tscore = function(mu, x) { return jStat.tscore(mu, x); }
 R.ttest = function(mu, x, sides, flag) { 
-  sides = R.def(sides, 2), flag = R.def(flag, true);
+  sides = V.def(sides, 2), flag = V.def(flag, true);
   return jStat.ttest(mu, x, sides, true); 
 }
 
@@ -266,23 +281,23 @@ var G=function() {
             label: 'X',
             tick: { fit: false }
           },
-          y: { label: 'Y' }
+          y: { label: 'Y', 
+		    tick : { format: d3.format(".2f") }
+    	  }
         }, 
 		bar: { width: { ratio: 0.9 } }, 
       };
   this.varcount = 0;
-  this.range(-10, 10, -10, 10);
+  this.xrange(-10, 10);
   this.step = 1;
   this.setrange = false;
 }
 
 G.prototype.tempvar = function() { return "T"+this.varcount++; }
 
-G.prototype.range = function(xmin, xmax, ymin, ymax) {
+G.prototype.xrange = function(xmin, xmax) {
   this.xmin = xmin;
   this.xmax = xmax;
-  this.ymin = ymin;
-  this.ymax = ymax;
   if (arguments.length == 0)
     this.setrange = false;
   else
@@ -297,10 +312,10 @@ G.prototype.plot = function(x,y,name) {
 }
 
 G.prototype.curve = function(f, name, step, from, to) {
-  name = R.def(name, this.tempvar());
-  step = R.def(step, this.step);
-  from = R.def(from, this.xmin);
-  to   = R.def(to,   this.xmax);
+  name = V.def(name, this.tempvar());
+  step = V.def(step, this.step);
+  from = V.def(from, this.xmin);
+  to   = V.def(to,   this.xmax);
   this.g.data.types[name] = "line";
   this.g.data.xs[name] = name+"x";
   var x = V.steps(from, to, step), y=[];
@@ -314,12 +329,12 @@ G.prototype.curve = function(f, name, step, from, to) {
   this.g.data.columns.push([name].concat(y));
 }
 
-G.prototype.hist = function(x, mode, name, step, from, to) {
-  mode = R.def(mode, ""); 
-  name = R.def(name, this.tempvar()); 
-  step = R.def(step, this.step); 
-  from = R.def(from, this.xmin); 
-  to=R.def(to, this.xmax);
+G.prototype.hist = function(x, name, mode, step, from, to) {
+  name = V.def(name, this.tempvar()); 
+  mode = V.def(mode, ""); 
+  step = V.def(step, this.step); 
+  from = V.def(from, this.xmin); 
+  to=V.def(to, this.xmax);
   this.g.data.types[name] = "bar";
   this.g.data.xs[name] = name+"x";
   var xc = V.steps(from+step/2.0, to, step);
@@ -347,13 +362,15 @@ R.newGraph = function() {
   R.g.show();
 }
 
-R.curve = function(f, name, step) {
-  R.g.curve(f, name, step);
+R.xrange = function(xmin, xmax) { R.g.xrange(xmin, xmax); }
+
+R.curve = function(f, name, step, from, to) {
+  R.g.curve(f, name, step, from, to);
   R.g.show();
 }
 
-R.hist = function(x, mode, name, step) {
-  R.g.hist(x, mode, name, step);
+R.hist = function(x, mode, name, step, from, to) {
+  R.g.hist(x, mode, name, step, from, to);
   R.g.show();
 }
 

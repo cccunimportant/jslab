@@ -17,9 +17,9 @@
 	  <center>
 	  <textarea id="codebox" class="lined" style="height:80%" onkeyup="onLineNumber();" onmouseup="this.onkeyup();">
 x = rnorm(1000, 5, 2);
-toStr(x,2);
-hist(x, "normalized", "x");
-curve("dnorm(x, 5,2)", "N(5,2)");
+str(x);
+hist(x, "x", "normalized");
+curve("dnorm(x, 5,2)", "N(5,2)", 0.2);
 </textarea>
       <div style="height:10px"></div>
       <div>
