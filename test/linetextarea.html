@@ -1,0 +1,31 @@
+<html>
+<head>
+	<title>JQuery LinedTextArea Demo</title>
+	<link href="../css/jquery-linedtextarea.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+
+<h1>JQuery LinedTextArea Demo</h1>
+
+<p>Add a scrollable lined area to a standard TextArea control.</p>
+
+	  <textarea id="code" class="lined" rows="10" cols="60" style="height:90%" onkeyup="codekeyup(event)">
+x = rnorm(1000, 5, 2);
+hist(x, "normalized", "x");
+curve("dnorm(x, 5,2)", "N(5,2)");
+</textarea><br/>
+
+	<script src="../js/jquery.min.js"></script>
+	<script src="../js/jquery-linedtextarea.js"></script>
+
+<script>
+$(function() {
+	$(".lined").linedtextarea(
+		{selectedLine: 1}
+	);
+});
+</script>
+
+
+</body>
+</html>

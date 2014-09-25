@@ -4,11 +4,11 @@
 R = {};
 
 if (typeof(module)!=="undefined") {
-  jStat = require("./jstat");
+  jStat = require("../js/jstat");
   R = global;
   V = global;
   R.inBrowser = false;
-  R.M = require("./numeric");
+  R.M = require("../js/numeric");
   module.exports = R;
 } else {
   R = window;
@@ -25,6 +25,19 @@ R.def=function(arg, value) {
 }
 
 // ------------------------ °}¦C¼Æ­È¨ç¼Æ ------------------------------
+V.precision = 2;
+
+V.toStr=function(a, precision) {
+  var rzStr = "";
+  for (var i=0; i<a.length; i++) {
+    if (a[i]>=0)
+      rzStr+=a[i].toFixed(precision)+" ";
+    else
+      rzStr+=a[i].toFixed(precision)+" ";
+  }
+  return "["+rzStr.trim().replace(/ /gi, ",")+"]";
+}
+
 // max(a0..an)
 V.max=function(a) {
   var r=Number.MIN_VALUE;
@@ -78,7 +91,7 @@ V.repeats=function(o, n) {
   var a=[];
   for (var i=0; i<n; i++)
     a.push(o);
-  return a;	
+  return a;
 }
 
 // a[1..n]+b[1..n]
@@ -117,19 +130,6 @@ V.flat=function(a) {
       V.push(a[i][j]);
   return r;
 }
-
-V.toStr=function(a, precision) {
-  var rzStr = "";
-  for (var i=0; i<a.length; i++) {
-    if (a[i]>=0)
-      rzStr+=a[i].toFixed(precision)+" ";
-    else
-      rzStr+=a[i].toFixed(precision)+" ";
-  }
-  return "["+rzStr.trim().replace(/ /gi, ",")+"]";
-}
-
-V.toStr=function(o) { return o.toString(); }
 
 // apply(a, f)=>[f(a[0]), ..., f(a[n],p)]
 V.apply=function() {
@@ -271,9 +271,23 @@ var G=function() {
 		bar: { width: { ratio: 0.9 } }, 
       };
   this.varcount = 0;
+  this.range(-10, 10, -10, 10);
+  this.step = 1;
+  this.setrange = false;
 }
 
 G.prototype.tempvar = function() { return "T"+this.varcount++; }
+
+G.prototype.range = function(xmin, xmax, ymin, ymax) {
+  this.xmin = xmin;
+  this.xmax = xmax;
+  this.ymin = ymin;
+  this.ymax = ymax;
+  if (arguments.length == 0)
+    this.setrange = false;
+  else
+    this.setrange = true;
+}
 
 G.prototype.plot = function(x,y,name) {
   this.g.data.types[name] = "scatter";
@@ -282,10 +296,11 @@ G.prototype.plot = function(x,y,name) {
   this.g.data.columns.push([name].concat(y));
 }
 
-// curve(f, name, from, to, step, f);
-G.prototype.curve = function(f, name, from, to, step) {
+G.prototype.curve = function(f, name, step, from, to) {
   name = R.def(name, this.tempvar());
-  from=R.def(from, 0); to=R.def(to, 10); step = (to-from)/20;
+  step = R.def(step, this.step);
+  from = R.def(from, this.xmin);
+  to   = R.def(to,   this.xmax);
   this.g.data.types[name] = "line";
   this.g.data.xs[name] = name+"x";
   var x = V.steps(from, to, step), y=[];
@@ -299,13 +314,12 @@ G.prototype.curve = function(f, name, from, to, step) {
   this.g.data.columns.push([name].concat(y));
 }
 
-// hist(name, from, to, step, x);
-G.prototype.hist = function(x, mode, name, from, to, step) {
-  var min = V.min(x), max=V.max(x);
-  
-  name = R.def(name, this.tempvar()); mode = R.def(mode, ""); 
-  from=R.def(from, min); to=R.def(to, max); step = R.def(step, (to-from)/20);
-  
+G.prototype.hist = function(x, mode, name, step, from, to) {
+  mode = R.def(mode, ""); 
+  name = R.def(name, this.tempvar()); 
+  step = R.def(step, this.step); 
+  from = R.def(from, this.xmin); 
+  to=R.def(to, this.xmax);
   this.g.data.types[name] = "bar";
   this.g.data.xs[name] = name+"x";
   var xc = V.steps(from+step/2.0, to, step);
@@ -328,20 +342,28 @@ G.prototype.show = function() {
     return c3.generate(this.g);
 }
 
-R.g = new G();
-
-R.curve = function(f, name, from, to, step) {
-  R.g.curve(f, name, from, to, step);
+R.newGraph = function() {
+  R.g = new G();
   R.g.show();
 }
 
-R.hist = function(x, mode, name, from, to, step) {
-  R.g.hist(x, mode, name, from, to, step);
+R.curve = function(f, name, step) {
+  R.g.curve(f, name, step);
+  R.g.show();
+}
+
+R.hist = function(x, mode, name, step) {
+  R.g.hist(x, mode, name, step);
   R.g.show();
 }
 
 R.plot = function(x,y,name) {
-  R.g.plit(x,y,name);
+  R.g.plot(x,y,name);
   R.g.show();
 }
+
+R.newGraph();
+
+
+
 
