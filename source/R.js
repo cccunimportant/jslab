@@ -29,6 +29,21 @@ V.def=function(arg, value) {
    return (typeof arg == 'undefined' ? value : arg);
 }
 
+V.opt = function(options, name, value) {
+  if (typeof(options)=='undefined') return value;
+  return V.def(options[name], value);
+//  return (typeof(options[name]) == 'undefined')?value:options[name];
+}
+
+V.fx = function() {
+  var args = Array.prototype.slice.call(arguments);
+  var f = args[0];
+  var fargs = args.slice(1, arguments.length);
+  return function(x) {
+    return f.apply(null, [x].concat(fargs));
+  };
+}
+
 // ------------------------ 陣列數值函數 ------------------------------
 // max(a0..an)
 V.max=function(a) {
@@ -188,24 +203,83 @@ R.q2x=function(q, cdf) {
 R.runif=function(n, a, b) { return V.calls(n, jStat.uniform.sample, a, b); }
 R.dunif=function(x, a, b) { return jStat.uniform.pdf(x, a, b); }
 R.punif=function(q, a, b) { return jStat.uniform.cdf(q, a, b); }
+R.qunif=function(p, a, b) { return R.q2x(p, function (q) { return R.punif(q, a, b);});}
 // 常態分布
 R.rnorm=function(n, mean, sd) { return V.calls(n, jStat.normal.sample, mean, sd); }
 R.dnorm=function(x, mean, sd) { return jStat.normal.pdf(x, mean, sd); }
 R.pnorm=function(q, mean, sd) { return jStat.normal.cdf(q, mean, sd); }
-R.qnorm=function(p, mean, sd) { return R.q2x(p, function (x) { return R.pnorm(mean, sd); }); }
+// R.qnorm=function(p, mean, sd) { return R.q2x(p, function (q) { return R.pnorm(q, mean, sd);});}
+R.qnorm=function(p, mean, sd) { return jStat.normal.inv(p, mean, sd); }
 // 布瓦松分布
 R.rpois=function(n, l) { return V.calls(n, jStat.poisson.sample, l); }
 R.dpois=function(x, l) { return jStat.poisson.pdf(x, l); }
 R.ppois=function(q, l) { return jStat.poisson.cdf(q, l); }
+R.qpois=function(p, l) { return R.q2x(p, function (q) { return R.ppois(q, l);});}
 // F 分布
 R.rf=function(n, df1, df2) { return V.calls(n, jStat.centralF.sample, df1, df2); }
 R.df=function(x, df1, df2) { return jStat.centralF.sample(x, df1, df2); }
 R.pf=function(q, df1, df2) { return jStat.centralF.sample(q, df1, df2); }
+R.qf=function(p, df1, df2) { return R.q2x(p, function (q) { return R.pf(q, df1, df2);});}
 // T 分布
 R.rt=function(n, dof) { return V.calls(n, jStat.studentt.sample, dof); }
 R.dt=function(x, dof) { return jStat.studentt.pdf(x, dof); }
 R.pt=function(q, dof) { return jStat.studentt.cdf(q, dof); }
-// 
+R.qt=function(p, dof) { return R.q2x(p, function (q) { return R.pt(q, dof);});}
+// Beta 分布
+R.rbeta=function(n, alpha, beta) { return V.calls(n, jStat.beta.sample, alpha, beta); }
+R.dbeta=function(x, alpha, beta) { return jStat.beta.pdf(x, alpha, beta); }
+R.pbeta=function(q, alpha, beta) { return jStat.beta.cdf(q, alpha, beta); }
+R.qbeta=function(p, alpha, beta) { return R.q2x(p, function (q) { return R.pbeta(q, alpha, beta);});}
+// 柯西分布
+R.rcauchy=function(n, local, scale) { return V.calls(n, jStat.cauchy.sample, local, scale); }
+R.dcauchy=function(x, local, scale) { return jStat.cauchy.pdf(x, local, scale); }
+R.pcauchy=function(q, local, scale) { return jStat.cauchy.cdf(q, local, scale); }
+R.qcauchy=function(p, local, scale) { return R.q2x(p, function (q) { return R.pcauchy(q, local, scale);});}
+// chisquare 分布
+R.rchisq=function(n, dof) { return V.calls(n, jStat.chisquare.sample, dof); }
+R.dchisq=function(x, dof) { return jStat.chisquare.pdf(x, dof); }
+R.pchisq=function(q, dof) { return jStat.chisquare.cdf(q, dof); }
+R.qchisq=function(p, dof) { return R.q2x(p, function (q) { return R.pchisq(q, dof);});}
+// 指數分布
+R.rexp=function(n, rate) { return V.calls(n, jStat.exponential.sample, rate); }
+R.dexp=function(x, rate) { return jStat.exponential.pdf(x, rate); }
+R.pexp=function(q, rate) { return jStat.exponential.cdf(q, rate); }
+R.qexp=function(p, rate) { return R.q2x(p, function (q) { return R.pexp(q, rate);});}
+// Gamma 分布
+R.rgamma=function(n, shape, scale) { return V.calls(n, jStat.gamma.sample, shape, scale); }
+R.dgamma=function(x, shape, scale) { return jStat.gamma.pdf(x, shape, scale); }
+R.pgamma=function(q, shape, scale) { return jStat.gamma.cdf(q, shape, scale); }
+R.qgamma=function(p, shape, scale) { return R.q2x(p, function (q) { return R.pgamma(q, shape, scale);});}
+// 反 Gamma 分布
+R.rinvgamma=function(n, shape, scale) { return V.calls(n, jStat.invgamma.sample, shape, scale); }
+R.dinvgamma=function(x, shape, scale) { return jStat.invgamma.pdf(x, shape, scale); }
+R.pinvgamma=function(q, shape, scale) { return jStat.invgamma.cdf(q, shape, scale); }
+R.qinvgamma=function(p, shape, scale) { return R.q2x(p, function (q) { return R.pinvgamma(q, shape, scale);});}
+// 對數常態分布
+R.rlognormal=function(n, mu, sigma) { return V.calls(n, jStat.lognormal.sample, mu, sigma); }
+R.dlognormal=function(x, mu, sigma) { return jStat.lognormal.pdf(x, mu, sigma); }
+R.plognormal=function(q, mu, sigma) { return jStat.lognormal.cdf(q, mu, sigma); }
+R.qlognormal=function(p, mu, sigma) { return R.q2x(p, function (q) { return R.plognormal(q, mu, sigma);});}
+// Pareto 分布
+R.rpareto=function(n, scale, shape) { return V.calls(n, jStat.pareto.sample, scale, shape); }
+R.dpareto=function(x, scale, shape) { return jStat.pareto.pdf(x, scale, shape); }
+R.ppareto=function(q, scale, shape) { return jStat.pareto.cdf(q, scale, shape); }
+R.qpareto=function(p, scale, shape) { return R.q2x(p, function (q) { return R.ppareto(q, scale, shape);});}
+// Weibull 分布
+R.rweibull=function(n, scale, shape) { return V.calls(n, jStat.weibull.sample, scale, shape); }
+R.dweibull=function(x, scale, shape) { return jStat.weibull.pdf(x, scale, shape); }
+R.pweibull=function(q, scale, shape) { return jStat.weibull.cdf(q, scale, shape); }
+R.qweibull=function(p, scale, shape) { return R.q2x(p, function (q) { return R.pweibull(q, scale, shape);});}
+// 三角分布
+R.rtriangular=function(n, a, b, c) { return V.calls(n, jStat.triangular.sample, a, b, c); }
+R.dtriangular=function(x, a, b, c) { return jStat.triangular.pdf(x, a, b, c); }
+R.ptriangular=function(q, a, b, c) { return jStat.triangular.cdf(q, a, b, c); }
+R.qtriangular=function(p, a, b, c) { return R.q2x(p, function (q) { return R.ptriangular(q, a, b, c);});}
+// 類似 Beta 分布，但計算更簡單
+R.rkumaraswamy=function(n, alpha, beta) { return V.calls(n, jStat.kumaraswamy.sample, alpha, beta); }
+R.dkumaraswamy=function(x, alpha, beta) { return jStat.kumaraswamy.pdf(x, alpha, beta); }
+R.pkumaraswamy=function(q, alpha, beta) { return jStat.kumaraswamy.cdf(q, alpha, beta); }
+R.qkumaraswamy=function(p, alpha, beta) { return R.q2x(p, function (q) { return R.pkumaraswamy(q, alpha, beta);});}
 
 // -------------------------- 離散分布 -------------------------------------
 R.sample1=function(a, p) { 
@@ -225,32 +299,21 @@ R.sample=function(n, a, p) { return V.calls(n, R.sample1, a, p); }
 
 // 二項分布
 R.rbinom=function(n, N, p) { return V.calls(n, jStat.binomial.sample, N, p); }
+R.dbinom=function(x, N, p) { return jStat.binomial.pdf(x, N, p); }
+R.pbinom=function(q, N, p) { return jStat.binomial.cdf(q, N, p); }
+R.qbinom=function(p, N, p) { return R.q2x(p, function (q) { return R.pbinom(q, N, p);});}
+
 // 負二項分布
-R.rnegbin=function(n, r, p) { return V.calls(n, jStat.weibull.sample, r, p); }
+R.rnbinom=function(n, N, p) { return V.calls(n, jStat.negbin.sample, N, p); }
+R.dnbinom=function(x, N, p) { return jStat.negbin.pdf(x, N, p); }
+R.pnbinom=function(q, N, p) { return jStat.negbin.cdf(q, N, p); }
+R.qnbinom=function(p, N, p) { return R.q2x(p, function (q) { return R.pnbinom(q, N, p);});}
+
 // 超幾何分布
-R.rhypgeom=function(n, N, m, n) { return V.calls(n, jStat.hypgeom.sample, N, m, n); }
-// 柯西分布
-R.rcauchy=function(n, local, scale) { return V.calls(n, jStat.cauchy.sample, local, scale); }
-// Beta 分布
-R.rbeta=function(n, alpha, beta) { return V.calls(n, jStat.beta.sample, alpha, beta); }
-// chisquare 分布
-R.rchisq=function(n, dof) { return V.calls(n, jStat.chisquare.sample, dof); }
-// 指數分布
-R.rexp=function(n, rate) { return V.calls(n, jStat.beta.exponential, rate); }
-// Gamma 分布
-R.rgamma=function(n, shape, scale) { return V.calls(n, jStat.gamma.sample, shape, scale); }
-// 反 Gamma 分布
-R.rinvgamma=function(n, shape, scale) { return V.calls(n, jStat.invgamma.sample, shape, scale); }
-
-// 對數常態分布
-R.rlognormal=function(n, mu, sigma) { return V.calls(n, jStat.lognormal.sample, mu, sigma); }
-// Pareto 分布
-R.rpareto=function(n, scale, shape) { return V.calls(n, jStat.pareto.sample, scale, shape); }
-// Weibull 分布
-R.rweibull=function(n, scale, shape) { return V.calls(n, jStat.weibull.sample, scale, shape); }
-
-R.rtriangular=function(n, a, b, c) { return V.calls(n, jStat.weibull.sample, a, b, c); }
-R.rkumaraswamy=function(n, alpha, beta) { return V.calls(n, jStat.kumaraswamy.sample, alpha, beta); }
+R.rhyper=function(n, N, m, n) { return V.calls(n, jStat.hypgeom.sample, N, m, n); }
+R.dhyper=function(x, N, m, n) { return jStat.hypgeom.pdf(x, N, m, n); }
+R.phyper=function(q, N, m, n) { return jStat.hypgeom.cdf(q, N, m, n); }
+R.qhyper=function(p, N, m, n) { return R.q2x(p, function (q) { return R.phyper(q, N, m, n);});}
 
 // ------------------------------ 統計與檢定 -----------------------------------------
 // 說明：以下 ?test 傳回顯著值 p-value，最後一個變數 flag = true 代表使用樣本標準差。
@@ -279,7 +342,7 @@ var G=function() {
         axis: {
           x: {
             label: 'X',
-            tick: { fit: false }
+            tick: { fit: false, format:d3.format(".2f") }
           },
           y: { label: 'Y', 
 		    tick : { format: d3.format(".2f") }
@@ -304,18 +367,19 @@ G.prototype.xrange = function(xmin, xmax) {
     this.setrange = true;
 }
 
-G.prototype.plot = function(x,y,name) {
+G.prototype.plot = function(x,y, options) {
+  var name = V.opt(options, "name", this.tempvar());
   this.g.data.types[name] = "scatter";
   this.g.data.xs[name] = name+"x";
   this.g.data.columns.push([name+"x"].concat(x));
   this.g.data.columns.push([name].concat(y));
 }
 
-G.prototype.curve = function(f, name, step, from, to) {
-  name = V.def(name, this.tempvar());
-  step = V.def(step, this.step);
-  from = V.def(from, this.xmin);
-  to   = V.def(to,   this.xmax);
+G.prototype.curve = function(f, options) {
+  var name = V.opt(options, "name", this.tempvar());
+  var step = V.opt(options, "step", this.step);
+  var from = V.opt(options, "from", this.xmin);
+  var to   = V.opt(options, "to",   this.xmax);
   this.g.data.types[name] = "line";
   this.g.data.xs[name] = name+"x";
   var x = V.steps(from, to, step), y=[];
@@ -329,12 +393,12 @@ G.prototype.curve = function(f, name, step, from, to) {
   this.g.data.columns.push([name].concat(y));
 }
 
-G.prototype.hist = function(x, name, mode, step, from, to) {
-  name = V.def(name, this.tempvar()); 
-  mode = V.def(mode, ""); 
-  step = V.def(step, this.step); 
-  from = V.def(from, this.xmin); 
-  to=V.def(to, this.xmax);
+G.prototype.hist = function(x, options) {
+  var name = V.opt(options, "name", this.tempvar()); 
+  var mode = V.opt(options, "mode", ""); 
+  var step = V.opt(options, "step", this.step); 
+  var from = V.opt(options, "from", this.xmin); 
+  var to   = V.opt(options, "to", this.xmax);
   this.g.data.types[name] = "bar";
   this.g.data.xs[name] = name+"x";
   var xc = V.steps(from+step/2.0, to, step);
@@ -364,22 +428,22 @@ R.newGraph = function() {
 
 R.xrange = function(xmin, xmax) { R.g.xrange(xmin, xmax); }
 
-R.curve = function(f, name, step, from, to) {
-  R.g.curve(f, name, step, from, to);
+R.curve = function(f, options) {
+  R.g.curve(f, options);
   R.g.show();
 }
 
-R.hist = function(x, mode, name, step, from, to) {
-  R.g.hist(x, mode, name, step, from, to);
+R.hist = function(x, options) {
+  R.g.hist(x, options);
   R.g.show();
 }
 
-R.plot = function(x,y,name) {
-  R.g.plot(x,y,name);
+R.plot = function(x,y,options) {
+  R.g.plot(x,y,options);
   R.g.show();
 }
 
-R.newGraph();
+// R.newGraph();
 
 
 

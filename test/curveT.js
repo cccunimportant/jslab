@@ -1,3 +1,3 @@
-curve("dt(x,3)", "dt(3)", 0.1);
-curve("dt(x,10)","dt(10)", 0.1);
-curve("dt(x,25)","dt(25)", 0.1);
+curve(fx(dt, 3), {name:"dt(3)",  step:0.1});
+curve(fx(dt, 10),{name:"dt(10)", step:0.1});
+curve(fx(dt, 25),{name:"dt(25)", step:0.1});
