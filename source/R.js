@@ -5,7 +5,6 @@ R = {};
 
 if (typeof(module)!=="undefined") {
   jStat = require("../js/jstat");
-  M = require("../js/numeric");
   R = global;
   V = global;
   R.inBrowser = false;
@@ -13,17 +12,11 @@ if (typeof(module)!=="undefined") {
 } else {
   R = window;
   V = window;
-  M = numeric;
   R.inBrowser = true;
 }
 
 C = console;
 R.C = console;
-
-R.M = M
-R.str=M.prettyPrint;
-M.precision = 2;
-M.largeArray = 100;
 
 V.def=function(arg, value) {
    return (typeof arg == 'undefined' ? value : arg);
@@ -42,6 +35,71 @@ V.fx = function() {
   return function(x) {
     return f.apply(null, [x].concat(fargs));
   };
+}
+
+V.precision = 4;
+V.largeArray = 50;
+
+V.str = function prettyPrint(x) {
+    function fmtnum(x) {
+        if(x === 0) { return '0'; }
+        if(isNaN(x)) { return 'NaN'; }
+        if(x<0) { return '-'+fmtnum(-x); }
+        if(isFinite(x)) {
+            var scale = Math.floor(Math.log(x) / Math.log(10));
+            var normalized = x / Math.pow(10,scale);
+            var basic = normalized.toPrecision(V.precision);
+            if(parseFloat(basic) === 10) { scale++; normalized = 1; basic = normalized.toPrecision(V.precision); }
+            return parseFloat(basic).toString()+'e'+scale.toString();
+        }
+        return 'Infinity';
+    }
+    var ret = [];
+    function foo(x) {
+        var k;
+        if(typeof x === "undefined") { ret.push(Array(V.precision+8).join(' ')); return false; }
+        if(typeof x === "string") { ret.push('"'+x+'"'); return false; }
+        if(typeof x === "boolean") { ret.push(x.toString()); return false; }
+        if(typeof x === "number") {
+            var a = fmtnum(x);
+            var b = x.toPrecision(V.precision);
+            var c = parseFloat(x.toString()).toString();
+            var d = [a,b,c,parseFloat(b).toString(),parseFloat(c).toString()];
+            for(k=1;k<d.length;k++) { if(d[k].length < a.length) a = d[k]; }
+            ret.push(Array(V.precision+8-a.length).join(' ')+a);
+            return false;
+        }
+        if(x === null) { ret.push("null"); return false; }
+        if(typeof x === "function") { 
+            ret.push(x.toString());
+            var flag = false;
+            for(k in x) { if(x.hasOwnProperty(k)) { 
+                if(flag) ret.push(',\n');
+                else ret.push('\n{');
+                flag = true; 
+                ret.push(k); 
+                ret.push(': \n'); 
+                foo(x[k]); 
+            } }
+            if(flag) ret.push('}\n');
+            return true;
+        }
+        if(x instanceof Array) {
+            if(x.length > V.largeArray) { ret.push('...Large Array...'); return true; }
+            var flag = false;
+            ret.push('[');
+            for(k=0;k<x.length;k++) { if(k>0) { ret.push(','); if(flag) ret.push('\n '); } flag = foo(x[k]); }
+            ret.push(']');
+            return true;
+        }
+        ret.push('{');
+        var flag = false;
+        for(k in x) { if(x.hasOwnProperty(k)) { if(flag) ret.push(',\n'); flag = true; ret.push(k); ret.push(': \n'); foo(x[k]); } }
+        ret.push('}');
+        return true;
+    }
+    foo(x);
+    return ret.join('');
 }
 
 // ------------------------ 陣列數值函數 ------------------------------
@@ -171,6 +229,31 @@ V.calls=function() {
 }
 
 // --------------------- 數學函數 ------------------------------
+// 標準差
+R.sd = function(a, flag) { 
+  flag = V.def(flag, 1);
+  return jStat.stdev(a, flag); 
+}
+
+// 協方差
+R.cov = function(x, y) { 
+  return jStat.stdev(x, y); 
+}
+// 相關係數
+R.cor = function(x, y) { return jStat.corrcoeff(x, y); }
+// 階層 n!
+R.factorial = function(n) { return jStat.factorial(n); }
+// log(n!)
+R.lfactorial = function(n) { return jStat.factorialln(n); }
+// 組合 C(n,m)
+R.choose = function(n,m) { return jStat.combination(n, m); }
+// log C(n,m)
+R.lchoose = function(n,m) { return jStat.combinationln(n, m); }
+// 組合 C(n,m)
+R.permutation = function(n,m) { return jStat.permutation(n, m); }
+// log C(n,m)
+R.lchoose = function(n,m) { return jStat.combinationln(n, m); }
+/*
 // log n!
 R.logp=function(n) { 
   var na = V.steps(1, n, 1);
@@ -182,7 +265,7 @@ R.logp=function(n) {
 R.logc=function(n,k) {
   return R.logp(n)-R.logp(k)-R.logp(n-k);
 }
-
+*/
 R.q2x=function(q, cdf) {
   var max=10000000, min=-max;
   while (true) {
@@ -329,8 +412,9 @@ R.ttest = function(mu, x, sides, flag) {
   return jStat.ttest(mu, x, sides, true); 
 }
 
-// ------------------ 繪圖物件與函數 --------------------------------
-var G=function() {
+// ------------------ 繪圖物件與函數 C3.js 部份  --------------------------------
+// 注意： C3 的繪圖對像好像是放在 $$.config 裏，預設可能是 chart
+var C3G=function() {
   this.g = {
         data: {
 /*		  x: "x",  */
@@ -356,9 +440,9 @@ var G=function() {
   this.setrange = false;
 }
 
-G.prototype.tempvar = function() { return "T"+this.varcount++; }
+C3G.prototype.tempvar = function() { return "T"+this.varcount++; }
 
-G.prototype.xrange = function(xmin, xmax) {
+C3G.prototype.xrange = function(xmin, xmax) {
   this.xmin = xmin;
   this.xmax = xmax;
   if (arguments.length == 0)
@@ -367,7 +451,7 @@ G.prototype.xrange = function(xmin, xmax) {
     this.setrange = true;
 }
 
-G.prototype.plot = function(x,y, options) {
+C3G.prototype.plot = function(x,y, options) {
   var name = V.opt(options, "name", this.tempvar());
   this.g.data.types[name] = "scatter";
   this.g.data.xs[name] = name+"x";
@@ -375,7 +459,7 @@ G.prototype.plot = function(x,y, options) {
   this.g.data.columns.push([name].concat(y));
 }
 
-G.prototype.curve = function(f, options) {
+C3G.prototype.curve = function(f, options) {
   var name = V.opt(options, "name", this.tempvar());
   var step = V.opt(options, "step", this.step);
   var from = V.opt(options, "from", this.xmin);
@@ -393,7 +477,7 @@ G.prototype.curve = function(f, options) {
   this.g.data.columns.push([name].concat(y));
 }
 
-G.prototype.hist = function(x, options) {
+C3G.prototype.hist = function(x, options) {
   var name = V.opt(options, "name", this.tempvar()); 
   var mode = V.opt(options, "mode", ""); 
   var step = V.opt(options, "step", this.step); 
@@ -416,35 +500,75 @@ G.prototype.hist = function(x, options) {
   this.g.data.columns.push([name].concat(count));
 }
 
-G.prototype.show = function() {
+C3G.prototype.show = function() {
   if (R.inBrowser)
     return c3.generate(this.g);
 }
 
-R.newGraph = function() {
-  R.g = new G();
-  R.g.show();
+// ------------------ 繪圖物件與函數 vis.js 部份  --------------------------------
+var VISG=function() {
+      // specify options
+  this.options = {
+        width:  '95%',
+        height: '95%',
+        style: 'surface',
+        showPerspective: true,
+        showGrid: true,
+        showShadow: false,
+        keepAspectRatio: true,
+        verticalRatio: 0.5
+      };
+  this.data = null; 
+  this.graph= null;
 }
 
-R.xrange = function(xmin, xmax) { R.g.xrange(xmin, xmax); }
+VISG.prototype.curve3d = function(f, box) {
+  // Create and populate a data table.
+  var data = new vis.DataSet();
+  // create some nice looking data with sin/cos
+  var counter = 0;
+  var steps = 50;  // number of datapoints will be steps*steps
+  var axisMax = 314;
+  var axisStep = axisMax / steps;
+  for (var x = 0; x < axisMax; x+=axisStep) {
+    for (var y = 0; y < axisMax; y+=axisStep) {
+      var value = f(x,y);
+      data.add({id:counter++,x:x,y:y,z:value,style:value});
+    }
+  }
+  this.graph = new vis.Graph3d(box, data, this.options);
+}
+
+// ---------------------- 繪圖整合函數 ----------------------------------
+R.newGraph = function(box) {
+  R.c3g = new C3G();
+  R.visg = new VISG();
+  R.box = box;
+//  R.c3g.show();
+}
+
+// C3 部份
+R.xrange = function(xmin, xmax) { R.c3g.xrange(xmin, xmax); }
 
 R.curve = function(f, options) {
-  R.g.curve(f, options);
-  R.g.show();
+  R.c3g.curve(f, options);
+  R.c3g.show();
 }
 
 R.hist = function(x, options) {
-  R.g.hist(x, options);
-  R.g.show();
+  R.c3g.hist(x, options);
+  R.c3g.show();
 }
 
 R.plot = function(x,y,options) {
-  R.g.plot(x,y,options);
-  R.g.show();
+  R.c3g.plot(x,y,options);
+  R.c3g.show();
 }
 
-// R.newGraph();
-
+// Vis 部份
+R.curve3d = function(f) {
+  R.visg.curve3d(f, R.box);
+}
 
 
 

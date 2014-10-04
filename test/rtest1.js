@@ -3,6 +3,8 @@ var R = require("../source/R");
 var x = rnorm(25, 5, 2);
 C.log("x=%s\nmean(x)=%d sd(x)=%d", str(x), mean(x), sd(x,1));
 
+C.log("x=%s", R.str(x));
+
 var t = ttest(5.2, x, 2);
 C.log("t=%j", t);
 

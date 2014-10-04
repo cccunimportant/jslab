@@ -5,7 +5,7 @@
 	<link rel="stylesheet" type="text/css" href="../css/jquery-linedtextarea.css"/>
 	<style>
 	body, fieldset, div { font-size:large; }
-	button , input { font-size:large; }
+	button , input, select { font-size:large; }
 	textarea { width:95%; }
 	fieldset { width:90%; height:98%; }
 	</style>
@@ -15,22 +15,11 @@
     <div style="width:50%;height:95%;float:left;">
      <fieldset>
       <legend>JavaScript</legend>
-	  <center>
-	  <textarea id="codebox" class="lined" style="height:80%" onkeyup="onLineNumber();" onmouseup="this.onkeyup();">
-x = rnorm(1000, 5, 2);
-str(x);
-hist(x, {name:"x", mode:"normalized"});
-curve(fx(dnorm, 5, 2), {step:0.2});
+	  <!-- onmouseup="onLineNumber();"-->
+	  <textarea id="codebox" class="lined" style="height:90%" onmouseup="onLineNumber();">
+    function f(x, y) { return (Math.sin(x/50) * Math.cos(y/50) * 50 + 50); }
+    curve3d(f);
 </textarea>
-      <div style="height:10px"></div>
-      <div>
-	    <input type="file" id="filebox" name="filebox" onchange="handleFileSelect"/>
-	    <input type="radio" name="mode" value="code" checked="true"/>code
-        <input type="radio" name="mode" value="line"/>line &nbsp;
-        <button onclick="run()">run</button>
-        <button onclick="save()">save</button>
-	  </div>
-	  </center>
     </div>
     <div style="width:50%;height:95%;float:left;">
      <fieldset>
@@ -39,21 +28,38 @@ curve(fx(dnorm, 5, 2), {step:0.2});
      </fieldset>
 	</div>
    </div>
-   <div style="width:98%;height:100px">
+   <center>
+    <div style="width:98%">
+     <input type="radio" name="mode" value="code" checked="true"/>code
+     <input type="radio" name="mode" value="line"/>line &nbsp; 
+<!-- <BR/> -->
+     <select id="filename">
+      <option value="hist1.js">hist1.js</option>
+      <option value="plot1.js">plot1.js</option>
+      <option value="curveT.js">curveT.js</option>
+     </select>
+	 <input type="file" id="filebox" name="filebox" style="width:250px"/>
+     <button onclick="load()">load</button>
+     <button onclick="run()">run</button>
+     <button onclick="save()">save</button>
+	</div>
+    <div style="width:98%;height:100px">
      <textarea id="msgbox" style="width:100%;height:100%"></textarea>
-   </div>
-    
+    </div>
+   </center>
    <script src="../js/d3.min.js" charset="utf-8"></script>
    <script src="../js/c3.min.js"></script>
    <script src="../js/jstat.min.js"></script>
    <script src="../js/numeric.min.js"></script>
    <script src="../js/jquery.min.js"></script>
    <script src="../js/jquery-linedtextarea.js"></script>
+   <script src="../js/vis.js"></script>
    <script src="../source/R.js"></script>
    <script>
    var filebox = document.getElementById('filebox');
    var codebox = document.getElementById('codebox');
    var msgbox  = document.getElementById('msgbox');
+   var chartbox= document.getElementById('chart');
    var filename= "test.js";
    var lineNo  = 1;
    var mode, code, lines, results;
@@ -92,13 +98,67 @@ curve(fx(dnorm, 5, 2), {step:0.2});
 	 }
     }
 	
+    function isObject(val) {
+      if (val === null) { return false;}
+      return ( (typeof val === 'function') || (typeof val === 'object') );
+    }
+	
+    function allMembers(o) {
+      var members = [], pmembers=[];
+      if (typeof o === "string")
+        o = String;
+      if (isObject(o)) {
+        members = Object.getOwnPropertyNames(o);
+    //	C.log("members="+members);
+	    var proto = Object.getPrototypeOf(o);
+	    if (isObject(proto)) {
+	      pmembers = Object.getOwnPropertyNames(proto);
+      //  C.log("pmembers="+pmembers);
+	    }
+      }
+      return members.concat(pmembers);
+    }
+
+	function codekeyup(event) {
+	    var head = codebox.value.substr(0, codebox.selectionStart);
+//		alert(head);
+		if (event.keyCode == 190) { // keyCode(190)=='.'
+		  var lastLine = head.split(",").pop();
+		  var m = lastLine.match(/([\w]+)\.$/);
+		  if (m !== null) {
+		    var lastWord = m[1];
+			var obj = eval(lastWord);
+/*			var keys = [];
+			for (var key in obj) {
+			  keys.push(key);
+			}
+  		    alert("obj.keys="+keys);*/
+  		    alert("obj.keys="+allMembers(obj)); 
+		  }
+//		  var lastWord = lastLine.match(/([\w]+)\.$/)[1];
+//		  var lastWord = /[\w]+\.$/.match(lastLine);
+		}
+//		alert("event="+event.keyCode);
+//		alert("event="+JSON.stringify(event));
+/*      if (event.key === '.') {
+	    var head = codebox.value.substr(0, codebox.selectionStart);
+		alert(head);
+	  } else {
+        return true;
+      }
+*/	  
+      onLineNumber();
+	}
+	
+	codebox.addEventListener('keyup', codekeyup, false);
+	
     function run() {
       code = codebox.value.trim();
 	  mode = getRadioValue("mode");
       msgbox.value = "running...";
 	  if (mode === "code") {
         try { 
-          eval("newGraph();"+code);
+          eval("newGraph(chartbox);"+code);
 		} catch (e) {
 		  msgbox.value = "error  : ";
 		  if (typeof(e.lineNumber) !== "undefined")
@@ -106,7 +166,7 @@ curve(fx(dnorm, 5, 2), {step:0.2});
 		  msgbox.value += "\nmessage : "+e.message;
 		}
 	  } else {
-        lines = ["newGraph()"].concat(code.split("\n"));
+        lines = ["newGraph(chartbox)"].concat(code.split("\n"));
 	    results = [];
 	    for (var i in lines) {
 	      var v = null, e=null;
@@ -159,4 +219,9 @@ curve("dnorm(x, 5,2)", "N(5,2)", 0.2);
       }
 	}
 */	
+x = rnorm(1000, 5, 2);
+str(x);
+hist(x, {name:"x", mode:"normalized"});
+curve(fx(dnorm, 5, 2), {step:0.2});
+
 -->
