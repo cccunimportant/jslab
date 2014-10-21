@@ -34,15 +34,17 @@
     <div style="width:98%">
      <input type="radio" name="mode" value="code" checked="true"/>code
      <input type="radio" name="mode" value="line"/>line &nbsp; 
+	 <input type="file" id="filebox" name="filebox" style="width:250px"/>
+     <button onclick="load()">load</button>
+     <button onclick="run()">run</button>
+     <button onclick="save()">save</button>
+<!--server	 
      <select id="filename">
       <option value="hist1.js">hist1.js</option>
       <option value="plot1.js">plot1.js</option>
       <option value="curveT.js">curveT.js</option>
      </select>
-	 <input type="file" id="filebox" name="filebox" style="width:250px"/>
-     <button onclick="load()">load</button>
-     <button onclick="run()">run</button>
-     <button onclick="save()">save</button>
+server-->
 	</div>
     <div style="width:98%;height:100px">
      <textarea id="msgbox" style="width:100%;height:100%"></textarea>
@@ -73,9 +75,6 @@
 	  reader.onload = function(e) {
 		codebox.value = reader.result;
 		E.editor.setValue(codebox.value);
-//		E.editor.refresh();
-//		codebox.nextSibling.CodeMirror.refresh();
-//		CodeMirror.refresh();
 	    run();
       };
 	  filename = evt.target.files[0].name;
@@ -106,7 +105,7 @@
 	codebox.addEventListener('keyup', codekeyup, false);
 	
     function run() {
-      code = codebox.value.trim();
+	  code = E.editor.getValue();
 	  mode = getRadioValue("mode");
       msgbox.value = "running...";
 	  if (mode === "code") {
@@ -132,9 +131,7 @@
 	    }
 	  }
 	  msgbox.value += "finished!";
-    }
-	
-//	run();
+    }	
    </script>
  </body>
 </html>

@@ -1,10 +1,14 @@
+"use strict";
+
 U.use("../js/c3.min.js", "c3");
 U.use("../js/d3.min.js", "d3");
 U.use("../js/vis.min.js", "vis");
 
+U.need("R");
+
 G = {};
 
-U.moduleExport(G);
+if (typeof module!=="undefined") module.exports = G;
 
 // ------------------ 繪圖物件與函數 C3.js 部份  --------------------------------
 // 注意： C3 的繪圖對像好像是放在 $$.config 裏，預設可能是 chart
@@ -15,7 +19,7 @@ var C3G=function() {
           xs: {},
           columns: [ /*["x", 1, 2, 3, 4 ]*/ ],
 		  type: "line", 
-		  types : {}, 
+		  types : {}
         },
         axis: {
           x: {
@@ -46,7 +50,7 @@ C3G.prototype.xrange = function(xmin, xmax) {
 }
 
 C3G.prototype.plot = function(x,y, options) {
-  var name = V.opt(options, "name", this.tempvar());
+  var name = R.opt(options, "name", this.tempvar());
   this.g.data.types[name] = "scatter";
   this.g.data.xs[name] = name+"x";
   this.g.data.columns.push([name+"x"].concat(x));
@@ -54,13 +58,13 @@ C3G.prototype.plot = function(x,y, options) {
 }
 
 C3G.prototype.curve = function(f, options) {
-  var name = V.opt(options, "name", this.tempvar());
-  var step = V.opt(options, "step", this.step);
-  var from = V.opt(options, "from", this.xmin);
-  var to   = V.opt(options, "to",   this.xmax);
+  var name = R.opt(options, "name", this.tempvar());
+  var step = R.opt(options, "step", this.step);
+  var from = R.opt(options, "from", this.xmin);
+  var to   = R.opt(options, "to",   this.xmax);
   this.g.data.types[name] = "line";
   this.g.data.xs[name] = name+"x";
-  var x = V.steps(from, to, step), y=[];
+  var x = R.steps(from, to, step), y=[];
   for (var i in x) {
     if (typeof(f)==="string")
 		y.push(eval(f.replace("x", x[i])));
@@ -72,25 +76,25 @@ C3G.prototype.curve = function(f, options) {
 }
 
 C3G.prototype.hist = function(x, options) {
-  var name = V.opt(options, "name", this.tempvar()); 
-  var mode = V.opt(options, "mode", ""); 
-  var step = V.opt(options, "step", this.step); 
-  var from = V.opt(options, "from", this.xmin); 
-  var to   = V.opt(options, "to", this.xmax);
+  var name = R.opt(options, "name", this.tempvar()); 
+  var mode = R.opt(options, "mode", ""); 
+  var step = R.opt(options, "step", this.step); 
+  var from = R.opt(options, "from", this.xmin); 
+  var to   = R.opt(options, "to", this.xmax);
   this.g.data.types[name] = "bar";
   this.g.data.xs[name] = name+"x";
-  var xc = V.steps(from+step/2.0, to, step);
+  var xc = R.steps(from+step/2.0, to, step);
   var n = (to-from)/step + 1;
-  var count = V.repeats(0, n);
+  var count = R.repeats(0, n);
   for (var i in x) {
     var slot=Math.floor((x[i]-from)/step);
 	if (slot>=0 && slot < n)
 	  count[slot]++;
   }
   this.g.data.columns.push([name+"x"].concat(xc));
-  var total = V.sum(count);
+  var total = R.sum(count);
   if (mode === "normalized")
-    count = V.apply(count, function(c) { return (1.0/step)*(c/total); });
+    count = R.apply(count, function(c) { return (1.0/step)*(c/total); });
   this.g.data.columns.push([name].concat(count));
 }
 
