@@ -1,6 +1,7 @@
 jslab
 =====
 
+<<<<<<< HEAD
 JsLab -- A JavaScript Scientific Computing Environment (in R style API)
 
 JsLab is a R like environment but in JavaScript Language.
@@ -185,3 +186,6 @@ curve("dnorm(x, 5,2)", "N(5,2)");
 
 
 
+=======
+JsLab -- A JavaScript Scientific Computing Environment (in R style)
+>>>>>>> bbb0c650ba740ff3c17c4eed2546b664944b0c16
