@@ -7,7 +7,6 @@ U.use("../js/codemirror/mode/javascript/javascript.js");
 
 E = {};
 
-// U.exports(E, module);
 if (typeof module!=="undefined") module.exports = E;
 
 E.editor = null;

@@ -330,7 +330,7 @@ R.sample1=function(a, p) {
   return null;
 }
 
-R.sample=function(n, a, p) { return R.calls(n, R.sample1, a, p); }
+R.sample=function(x, n, p) { return R.calls(n, R.sample1, x, p); }
 
 // 二項分布
 R.rbinom=function(n, N, p) { return R.calls(n, jStat.binomial.sample, N, p); }
